@@ -81,7 +81,19 @@ def main():
     # 这里参数-1是指无限循环播放bgm
 
     # 生成我方飞机,调用myplane模块的MyPlace实例化
+    # me =myplane.BluePlane(bg_size)
     me =myplane.MyPlane(bg_size)
+    # me =myplane.RedPlane(bg_size)
+
+    plane_color = 0
+    # 飞机变色标签
+    color_bullet=False
+    # 飞机变色子弹变化
+    plane_image1=me.image1
+    plane_image2=me.image2
+    # 设置默认飞机图片
+
+
     # 用于切换飞机尾气图片
     switch_image=True
     # 用于延迟
@@ -227,6 +239,12 @@ def main():
                         for each in enemies:
                             if each.rect.bottom>0:
                                 each.active=False
+
+                # 添加飞机变色
+                if event.key==K_j or event.key==K_k:
+                    plane_color+=1
+                    color_bullet=True
+
             elif event.type==SUPPLY_TIMER and not paused:
                 supply_sound.play()
                 if choice([True,False]):
@@ -321,41 +339,6 @@ def main():
                     bullet_supply.active=False
 
 
-
-            # 子弹发射（每10帧绘制一次）
-            if not (delay%10):
-                # 播放子弹声音
-                bullet_sound.play()
-                if is_double_bullet:
-                    bullets=bullet2
-                    bullets[bullet2_index].reset((me.rect.centerx-33,me.rect.centery))
-                    bullets[bullet2_index+1].reset((me.rect.centerx+30,me.rect.centery))
-                    # 传入二元组（位置)
-                    bullet2_index=(bullet2_index+2)%BULLET2_NUM
-                else:
-                    bullets=bullet1
-                    bullets[bullet1_index].reset(me.rect.midtop)
-                    # 这里其实是预算了子弹差不多4颗能到屏幕80%地方(飞机下面状态栏占了20%）
-                    bullet1_index=(bullet1_index+1)%BULLET1_NUM
-
-            # 检测子弹是否击中敌机
-            for b in bullets:
-                if b.active:
-                    b.move()
-                    screen.blit(b.image,b.rect)
-                    enemy_hit=pygame.sprite.spritecollide(b,enemies,False,pygame.sprite.collide_mask)
-                    # 检测和敌机碰撞(返回碰撞敌机列表）
-                    if enemy_hit:
-                        b.active=False
-                        for e in enemy_hit:
-                            # 中飞机和大飞机血量为0才阵亡
-                            if e in mid_enemies or e in big_enemies:
-                                e.hit=True
-                                e.energy-=1
-                                if e.energy==0:
-                                    e.active=False
-                            else:
-                                e.active = False
 
             # 绘制大飞机
             for each in big_enemies:
@@ -465,6 +448,43 @@ def main():
                             score+=100
                             each.reset()
 
+            # 子弹发射（每10帧绘制一次）
+            if not (delay%10):
+                # 播放子弹声音
+                bullet_sound.play()
+                if is_double_bullet:
+                    bullets=bullet2
+                    bullets[bullet2_index].reset((me.rect.centerx-33,me.rect.centery))
+                    bullets[bullet2_index+1].reset((me.rect.centerx+30,me.rect.centery))
+                    # 传入二元组（位置)
+                    bullet2_index=(bullet2_index+2)%BULLET2_NUM
+                else:
+                    bullets=bullet1
+                    bullets[bullet1_index].reset(me.rect.midtop)
+                    # 这里其实是预算了子弹差不多4颗能到屏幕80%地方(飞机下面状态栏占了20%）
+                    bullet1_index=(bullet1_index+1)%BULLET1_NUM
+
+            # 检测子弹是否击中敌机
+            for b in bullets:
+                if b.active:
+                    b.move()
+                    screen.blit(b.image,b.rect)
+                    enemy_hit=pygame.sprite.spritecollide(b,enemies,False,pygame.sprite.collide_mask)
+                    # 检测和敌机碰撞(返回碰撞敌机列表）
+                    if enemy_hit:
+                        b.active=False
+                        for e in enemy_hit:
+                            # 中飞机和大飞机血量为0才阵亡
+                            if e in mid_enemies or e in big_enemies:
+                                e.hit=True
+                                e.energy-=1
+                                if e.energy==0:
+                                    e.active=False
+                            else:
+                                e.active = False
+
+
+
             #检测我方飞机是否被撞（第三个参数是碰撞毁灭False,第四个参数默认是矩形区域检测））
             enemies_down=pygame.sprite.spritecollide(me,enemies,False,pygame.sprite.collide_mask)
             # pygame.sprite.collide_mask图片非透明部分接触碰撞
@@ -474,14 +494,59 @@ def main():
                 for e in enemies_down:
                     e.active=False
 
-
-
-            # 我方飞机绘制(尾气切换)
+            # 我方飞机颜色转换绘制及子弹数量不同设置
             if me.active:
+                if color_bullet:
+                    if plane_color==0:
+                        plane_image1=me.image1
+                        plane_image2=me.image2
+                        # BULLET1_NUM = 6
+                        # BULLET2_NUM = 12
+                        # bullet1.append(bullet.Bullet1(me.rect.midtop))
+                        # bullet2.append(bullet.Bullet2((me.rect.centerx - 33, me.rect.centery)))
+                        # bullet2.append(bullet.Bullet2((me.rect.centerx + 30, me.rect.centery)))
+                        for i in bullet1:
+                            i.speed=12
+                        for j in bullet2:
+                            j.speed=12
+                        me.speed=10
+
+                    elif plane_color==1:
+                        plane_image1=me.image1_r
+                        plane_image2=me.image2_r
+                        # BULLET1_NUM = 7
+                        # BULLET2_NUM = 14
+                        # bullet1.append(bullet.Bullet1(me.rect.midtop))
+                        # bullet2.append(bullet.Bullet2((me.rect.centerx - 33, me.rect.centery)))
+                        # bullet2.append(bullet.Bullet2((me.rect.centerx + 30, me.rect.centery)))
+                        for i in bullet1:
+                            i.speed=16
+                        for j in bullet2:
+                            j.speed=16
+                        me.speed=7
+
+                    elif plane_color==2:
+                        plane_image1=me.image1_b
+                        plane_image2=me.image2_b
+                        # BULLET1_NUM = 5
+                        # BULLET2_NUM = 10
+                        # bullet1.remove(bullet1[-1])
+                        # bullet1.remove(bullet1[-1])
+                        # bullet2.remove(bullet2[-1])
+                        # bullet2.remove(bullet2[-1])
+                        # bullet2.remove(bullet2[-1])
+                        # bullet2.remove(bullet2[-1])
+                        for i in bullet1:
+                            i.speed=9
+                        for j in bullet2:
+                            j.speed=9
+                        me.speed=14
+
+                # 我方飞机绘制(尾气切换)
                 if switch_image:
-                    screen.blit(me.image1,me.rect)
+                    screen.blit(plane_image1,me.rect)
                 else:
-                    screen.blit(me.image2,me.rect)
+                    screen.blit(plane_image2,me.rect)
             else:
                 if not (delay % 3):
                 # 降速否则毁灭图片看不清
@@ -499,6 +564,10 @@ def main():
                         me.reset()
                         pygame.time.set_timer(INVINCIBLE_TIMER,3*1000)
                         # 设置reset后3秒，然后启动解除无敌状态
+
+
+
+
 
             # 得分显示(render函数将成字符串渲染成surface对象）
             score_text = score_font.render("Score : %s" % str(score), True, WHITE)
@@ -596,9 +665,15 @@ def main():
             delay=100
         # 相当于60帧的游戏尾气切换只有12帧
 
+        # 颜色切换
+        if plane_color==3:
+            plane_color=0
 
         pygame.display.flip()
         clock.tick(60)
+
+
+
 
 # if __name__=='__main__':
 #     try:
