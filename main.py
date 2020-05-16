@@ -497,7 +497,7 @@ def main():
             # 我方飞机颜色转换绘制及子弹数量不同设置
             if me.active:
                 if color_bullet:
-                    if plane_color==0:
+                    if plane_color==0 or plane_color==3:
                         plane_image1=me.image1
                         plane_image2=me.image2
                         # BULLET1_NUM = 6
@@ -520,9 +520,9 @@ def main():
                         # bullet2.append(bullet.Bullet2((me.rect.centerx - 33, me.rect.centery)))
                         # bullet2.append(bullet.Bullet2((me.rect.centerx + 30, me.rect.centery)))
                         for i in bullet1:
-                            i.speed=16
+                            i.speed=20
                         for j in bullet2:
-                            j.speed=16
+                            j.speed=20
                         me.speed=7
 
                     elif plane_color==2:
@@ -541,6 +541,8 @@ def main():
                         for j in bullet2:
                             j.speed=9
                         me.speed=14
+                    color_bullet=False
+
 
                 # 我方飞机绘制(尾气切换)
                 if switch_image:
