@@ -18,19 +18,21 @@ bg_size=width,height=640,880
 screen=pygame.display.set_mode(bg_size)
 pygame.display.set_caption("闪电⚡️战机")
 
-background=pygame.image.load('images/background.png').convert_alpha()
-thunder_image=pygame.image.load('images/thunder.png').convert()
+background=pygame.image.load('images/bg1.png').convert_alpha()
+thunder_image=pygame.image.load('images/lightning.jpg').convert()
 
 # 定义颜色
 BLACK=(0,0,0)
 GREEN=(0,255,0)
 RED=(255,0,0)
 WHITE=(255,255,255)
+BLUE=(0,100,200)
 
 # 载入游戏音乐
 # bgm
-pygame.mixer.music.load(r'sound/game_music.ogg')
+pygame.mixer.music.load(r'sound/booty.ogg')
 pygame.mixer.music.set_volume(0.15)
+
 # 各种sound
 bullet_sound=pygame.mixer.Sound(r'sound/bullet.wav')
 bullet_sound.set_volume(0.1)
@@ -56,6 +58,9 @@ me_down_sound=pygame.mixer.Sound(r'sound/me_down.wav')
 me_down_sound.set_volume(0.2)
 thunder_sound=pygame.mixer.Sound('sound/thunder.wav')
 thunder_sound.set_volume(0.6)
+# 剩余与与音效加载完毕
+
+
 
 def add_small_enemies(group1,group2,num):
     for i in range(num):
@@ -120,6 +125,7 @@ def main():
     for i in range(BULLET1_NUM):
         bullet1.append(bullet.Bullet1(me.rect.midtop))
         # rect的midtop即位于顶部中央
+
     # 生成超级子弹
     bullet2 = []
     bullet2_index = 0
@@ -129,9 +135,21 @@ def main():
         bullet2.append(bullet.Bullet2((me.rect.centerx-33,me.rect.centery)))
         bullet2.append(bullet.Bullet2((me.rect.centerx+30,me.rect.centery)))
 
+    # 生成懒羊羊子弹
+    bullet3=[]
+    bullet3_index=0
+    BULLET3_NUM=6
+    for i in range(BULLET3_NUM):
+        bullet3.append(bullet.Bullet3(me.rect.midtop))
+
+
+    # BGM切换标志
+    bgm_change=False
+
+
     # 用于统计得分
     score=0
-    score_font=pygame.font.Font('font/Herculanum.ttf',36)
+    score_font=pygame.font.Font('font/font.ttf',36)
     # pyinstaller打包时字体要写绝对路径
 
     # 暂停游戏标志
@@ -151,24 +169,29 @@ def main():
     # 设置全屏炸弹
     bomb_image=pygame.image.load(r'./images/bomb.png').convert_alpha()
     bomb_rect=bomb_image.get_rect()
-    bomb_font=pygame.font.Font('font/Herculanum.ttf',48)
+    bomb_font=pygame.font.Font('font/font.ttf',48)
     bomb_num=3
 
     # 每30秒发放补给包
     bullet_supply=supply.Bullet_Supply(bg_size)
     bomb_supply=supply.Bomb_Supply(bg_size)
+    sun_supply=supply.Sun_Supply(bg_size)
     # 补给包定时器(自定义事件） 30s
     SUPPLY_TIMER=USEREVENT
     pygame.time.set_timer(SUPPLY_TIMER,20*1000)
-
 
     # 超级子弹定时器
     DOUBLE_BULLET_TIMER=USEREVENT+1
     # 标志是否使用
     is_double_bullet=False
 
-    #解除我方无敌计时器
-    INVINCIBLE_TIMER=USEREVENT+2
+    # 懒羊羊变身定时器
+    SHEEP_TIMER=USEREVENT+2
+    # 标志是否变身
+    is_sheep=False
+
+    # 解除我方无敌计时器
+    INVINCIBLE_TIMER=USEREVENT+3
 
 
     # 生命剩余
@@ -180,7 +203,7 @@ def main():
     recorded=False
 
     # 游戏结束画面
-    gameover_font=pygame.font.Font("font/Herculanum.ttf",48)
+    gameover_font=pygame.font.Font("font/font.ttf",48)
     again_image=pygame.image.load("images/again.png").convert_alpha()
     again_rect=again_image.get_rect()
     gameover_image=pygame.image.load("images/gameover.png").convert_alpha()
@@ -235,7 +258,7 @@ def main():
                         thunder_sound.play()
                         screen.blit(thunder_image,(0,0))
                         pygame.display.flip()
-                        pygame.time.delay(500)
+                        pygame.time.delay(700)
                         for each in enemies:
                             if each.rect.bottom>0:
                                 each.active=False
@@ -247,14 +270,25 @@ def main():
 
             elif event.type==SUPPLY_TIMER and not paused:
                 supply_sound.play()
-                if choice([True,False]):
+                supply_choice=choice([0,1,2])
+                if supply_choice==0:
                     bomb_supply.reset()
-                else:
+                elif supply_choice==1:
                     bullet_supply.reset()
+                elif supply_choice==2:
+                    sun_supply.reset()
+
             elif event.type==DOUBLE_BULLET_TIMER:
                 # 触发超级子弹18秒后启动DOUBLE_BULLET_TIMER事件，定时器就关闭
                 is_double_bullet=False
                 pygame.time.set_timer(DOUBLE_BULLET_TIMER,0)
+
+            elif event.type==SHEEP_TIMER:
+                is_sheep=False
+                pygame.time.set_timer(SHEEP_TIMER,0)
+                color_bullet = True
+                # 变身懒羊羊结束后，需要变回普通形态
+
             elif event.type==INVINCIBLE_TIMER:
                 me.invincible=False
                 pygame.time.set_timer(INVINCIBLE_TIMER,0)
@@ -272,6 +306,7 @@ def main():
             add_big_enemies(big_enemies,enemies,1)
             # 提升小飞机速度(1点）
             increase_speed(small_enemies,1)
+
         elif level==2 and score>2000:
             level=3
             upgrade_sound.play()
@@ -299,6 +334,18 @@ def main():
             add_big_enemies(big_enemies, enemies, 2)
             increase_speed(small_enemies, 1)
             increase_speed(mid_enemies, 1)
+
+            bgm_change = True
+            # 切歌
+
+
+        if bgm_change:
+            pygame.mixer.music.load(r'sound/all.ogg')
+            pygame.mixer.music.set_volume(0.15)
+            pygame.mixer.music.play(-1)
+            bgm_change=False
+
+
 
         # 背景绘制
         screen.blit(background, (0, 0))
@@ -337,7 +384,15 @@ def main():
                     is_double_bullet=True
                     pygame.time.set_timer(DOUBLE_BULLET_TIMER,12*1000)
                     bullet_supply.active=False
-
+            # 绘制太阳补给包并检测获得
+            if sun_supply.active:
+                sun_supply.move()
+                screen.blit(sun_supply.image, sun_supply.rect)
+                if pygame.sprite.collide_mask(me, sun_supply):
+                    # 这里检测完美碰撞（两个单体），返回True和False
+                    is_sheep=True
+                    pygame.time.set_timer(SHEEP_TIMER,5*1000)
+                    sun_supply.active=False
 
 
             # 绘制大飞机
@@ -458,11 +513,16 @@ def main():
                     bullets[bullet2_index+1].reset((me.rect.centerx+30,me.rect.centery))
                     # 传入二元组（位置)
                     bullet2_index=(bullet2_index+2)%BULLET2_NUM
+                elif is_sheep:
+                    bullets=bullet3
+                    bullets[bullet3_index].reset((me.rect.left,me.rect.top))
+                    bullet3_index=(bullet3_index+1)%BULLET3_NUM
                 else:
                     bullets=bullet1
                     bullets[bullet1_index].reset(me.rect.midtop)
                     # 这里其实是预算了子弹差不多4颗能到屏幕80%地方(飞机下面状态栏占了20%）
                     bullet1_index=(bullet1_index+1)%BULLET1_NUM
+
 
             # 检测子弹是否击中敌机
             for b in bullets:
@@ -496,52 +556,56 @@ def main():
 
             # 我方飞机颜色转换绘制及子弹数量不同设置
             if me.active:
-                if color_bullet:
-                    if plane_color==0 or plane_color==3:
-                        plane_image1=me.image1
-                        plane_image2=me.image2
-                        # BULLET1_NUM = 6
-                        # BULLET2_NUM = 12
-                        # bullet1.append(bullet.Bullet1(me.rect.midtop))
-                        # bullet2.append(bullet.Bullet2((me.rect.centerx - 33, me.rect.centery)))
-                        # bullet2.append(bullet.Bullet2((me.rect.centerx + 30, me.rect.centery)))
-                        for i in bullet1:
-                            i.speed=12
-                        for j in bullet2:
-                            j.speed=12
-                        me.speed=10
+                if is_sheep:
+                    plane_image1=me.image1_sheep
+                    plane_image2=me.image1_sheep
+                else:
+                    if color_bullet:
+                        if plane_color==0 or plane_color==3:
+                            plane_image1=me.image1
+                            plane_image2=me.image2
+                            # BULLET1_NUM = 6
+                            # BULLET2_NUM = 12
+                            # bullet1.append(bullet.Bullet1(me.rect.midtop))
+                            # bullet2.append(bullet.Bullet2((me.rect.centerx - 33, me.rect.centery)))
+                            # bullet2.append(bullet.Bullet2((me.rect.centerx + 30, me.rect.centery)))
+                            for i in bullet1:
+                                i.speed=12
+                            for j in bullet2:
+                                j.speed=12
+                            me.speed=10
 
-                    elif plane_color==1:
-                        plane_image1=me.image1_r
-                        plane_image2=me.image2_r
-                        # BULLET1_NUM = 7
-                        # BULLET2_NUM = 14
-                        # bullet1.append(bullet.Bullet1(me.rect.midtop))
-                        # bullet2.append(bullet.Bullet2((me.rect.centerx - 33, me.rect.centery)))
-                        # bullet2.append(bullet.Bullet2((me.rect.centerx + 30, me.rect.centery)))
-                        for i in bullet1:
-                            i.speed=20
-                        for j in bullet2:
-                            j.speed=20
-                        me.speed=7
+                        elif plane_color==1:
+                            plane_image1=me.image1_r
+                            plane_image2=me.image2_r
+                            # BULLET1_NUM = 7
+                            # BULLET2_NUM = 14
+                            # bullet1.append(bullet.Bullet1(me.rect.midtop))
+                            # bullet2.append(bullet.Bullet2((me.rect.centerx - 33, me.rect.centery)))
+                            # bullet2.append(bullet.Bullet2((me.rect.centerx + 30, me.rect.centery)))
+                            for i in bullet1:
+                                i.speed=20
+                            for j in bullet2:
+                                j.speed=20
+                            me.speed=7
 
-                    elif plane_color==2:
-                        plane_image1=me.image1_b
-                        plane_image2=me.image2_b
-                        # BULLET1_NUM = 5
-                        # BULLET2_NUM = 10
-                        # bullet1.remove(bullet1[-1])
-                        # bullet1.remove(bullet1[-1])
-                        # bullet2.remove(bullet2[-1])
-                        # bullet2.remove(bullet2[-1])
-                        # bullet2.remove(bullet2[-1])
-                        # bullet2.remove(bullet2[-1])
-                        for i in bullet1:
-                            i.speed=9
-                        for j in bullet2:
-                            j.speed=9
-                        me.speed=14
-                    color_bullet=False
+                        elif plane_color==2:
+                            plane_image1=me.image1_b
+                            plane_image2=me.image2_b
+                            # BULLET1_NUM = 5
+                            # BULLET2_NUM = 10
+                            # bullet1.remove(bullet1[-1])
+                            # bullet1.remove(bullet1[-1])
+                            # bullet2.remove(bullet2[-1])
+                            # bullet2.remove(bullet2[-1])
+                            # bullet2.remove(bullet2[-1])
+                            # bullet2.remove(bullet2[-1])
+                            for i in bullet1:
+                                i.speed=9
+                            for j in bullet2:
+                                j.speed=9
+                            me.speed=14
+                        color_bullet=False
 
 
                 # 我方飞机绘制(尾气切换)
@@ -572,7 +636,7 @@ def main():
 
 
             # 得分显示(render函数将成字符串渲染成surface对象）
-            score_text = score_font.render("Score : %s" % str(score), True, WHITE)
+            score_text = score_font.render("Score : %s" % str(score), True, BLUE)
             # 第二个参数为True表示拒绝锯齿
             screen.blit(score_text, (10, 5))
 
@@ -600,7 +664,7 @@ def main():
                 recorded=True
                 print("Game Over!")
             #  绘制游戏结束画面
-            record_score_text=score_font.render("Best : %d"%record_score,True,WHITE)
+            record_score_text=score_font.render("Best : %d"%record_score,True,BLUE)
             screen.blit(record_score_text,(50,50))
 
             gameover_text1=gameover_font.render("Your Score",True,WHITE)

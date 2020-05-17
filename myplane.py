@@ -13,6 +13,9 @@ class MyPlane(pygame.sprite.Sprite):
         self.image1_r=pygame.image.load('images/me1_r.png').convert_alpha()
         self.image2_r=pygame.image.load('images/me2_r.png').convert_alpha()
 
+        self.image1_sheep=pygame.image.load('images/sheep.png').convert_alpha()
+
+
         self.rect=self.image1.get_rect()
 
         self.width,self.height=bg_size[0],bg_size[1]
